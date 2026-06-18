@@ -22,6 +22,17 @@ pnpm gen:venue        # writes public/venue.large.json (~15000 seats)
 
 Load the large generated venue for performance testing with the `?venue=large` query param: `http://localhost:5173/?venue=large`.
 
+## Backend integration (optional, default off)
+
+By default the app is fully standalone: with no environment set it fetches the bundled `public/venue.json` exactly as the brief specifies, and a header badge reads **`data: static`**. Set `VITE_API_BASE_URL` (see `.env.example`) and the venue loader instead fetches `${base}/venue` from the companion [user-data-api](https://github.com/syedmustafan/user-data-api) backend — exercising a real full-stack path through that backend's LRU cache and rate limiter — and the badge flips to **`data: API`**. Both paths validate the response identically (`assertVenue` in `src/data/loadVenue.ts`), so the rest of the app is unchanged. To try it:
+
+```bash
+cp .env.example .env.local     # VITE_API_BASE_URL=http://localhost:4000
+pnpm dev                       # backend must be running on :4000
+```
+
+This integration is additive and does not affect the standalone submission: remove the env var (or the `.env.local`) and the app silently falls back to the static file. `.env.local` is gitignored; only `.env.example` is committed.
+
 ## Architecture and trade-offs
 
 This is a pure client SPA, so it uses **Vite + React, not Next**. There is no server data, no SEO surface, and no SSR requirement: the venue is a static JSON file fetched on load and everything else is local interaction. Next would add an SSR/runtime layer that buys nothing here and complicates the build. Vite gives instant dev startup and a small static bundle that any CDN can serve.
